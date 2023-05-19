@@ -9,6 +9,7 @@ function vscode.generateWorkspace(wks)
     p.eol("\r\n")    
     p.indent("\t")
     p.generate(wks, ".code-workspace", vscode.workspace.generate)
+    p.generate(wks, wks.location .. "/Tasks/.vscode/tasks.json", vscode.workspace.tasks.generate)
 end
 
 function vscode.generateProject(prj)
@@ -16,7 +17,7 @@ function vscode.generateProject(prj)
     p.indent("\t")
 
     if (project.isc(prj) or project.iscpp(prj)) then
-        p.generate(prj, prj.location .. "/.vscode/c_cpp_properties.json", vscode.project.generateLanguageProperties)
+        p.generate(prj, prj.location .. "/.vscode/c_cpp_properties.json", vscode.project.cCppProperties.generate)
     end
 end
 
@@ -40,6 +41,12 @@ function vscode.getCompiler(cfg)
         error("Invalid toolset '" .. (_OPTIONS.cc or cfg.toolset) "'")
     end
     return toolset
+end
+
+function vscode.esc(value)
+    value = value:gsub('\\', '\\\\')
+    value = value:gsub('"', '\\"')
+    return value
 end
 
 include("vscode_workspace.lua")

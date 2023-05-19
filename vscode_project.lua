@@ -5,9 +5,12 @@ local tree = p.tree
 local vscode = p.modules.vscode
 
 vscode.project = {}
-local m = vscode.project
+vscode.project.cCppProperties = {}
+vscode.project.tasks = {}
 
-m.cppStandards = {
+local cCppProperties = vscode.project.cCppProperties
+
+cCppProperties.cppStandards = {
 	["C++98"]   = "c++98",
 	["C++11"]   = "c++11",
 	["C++14"]   = "c++14",
@@ -22,7 +25,7 @@ m.cppStandards = {
 }
 
 -- NOTE(Peter): This is trash, but I can't think of a better way of doing this right now other than asking people to put the relavant directories in some env var (which is also trash)
-m.toolsetPaths = {
+cCppProperties.toolsetPaths = {
     ["windows"] = {
         ["msc"] = "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.35.32215/bin/Hostx64/x64/cl.exe",
         ["clang"] = "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/Llvm/x64/bin/clang-cl.exe"
@@ -33,7 +36,18 @@ m.toolsetPaths = {
     }
 }
 
-function m.intelliSenseMode(prj, cfg)
+cCppProperties.configProps = function(prj, cfg)
+    return {
+        cCppProperties.intelliSenseMode,
+        cCppProperties.includeDirs,
+        cCppProperties.defines,
+        cCppProperties.forceIncludes,
+        cCppProperties.cppStandard,
+        cCppProperties.compilerPath
+    }
+end
+
+function cCppProperties.intelliSenseMode(prj, cfg)
     local supportedModes = {
         ["msc"] = "msvc-x64",
         ["clang"] = "clang-x64",
@@ -50,7 +64,7 @@ function m.intelliSenseMode(prj, cfg)
     p.w('"intelliSenseMode": "%s",', mode)
 end
 
-function m.includeDirs(prj, cfg)
+function cCppProperties.includeDirs(prj, cfg)
 
     local hasIncludeDirs = #cfg.sysincludedirs > 0 or #cfg.externalincludedirs > 0 or #cfg.includedirs > 0
 
@@ -75,7 +89,7 @@ function m.includeDirs(prj, cfg)
     end
 end
 
-function m.defines(prj, cfg)
+function cCppProperties.defines(prj, cfg)
     if #cfg.defines > 0 then
         p.push('"defines": [')
 
@@ -87,12 +101,18 @@ function m.defines(prj, cfg)
     end
 end
 
-function m.forceIncludes(prj, cfg)
+function cCppProperties.forceIncludes(prj, cfg)
     local toolset = vscode.getCompiler(cfg)
     local forceIncludes = {}
 
     table.foreachi(cfg.forceincludes, function(file)
-        table.insert(forceIncludes, p.quoted(file))
+        tree.traverse(project.getsourcetree(prj), {
+            onleaf = function(node, depth)
+                if node.name == file then
+                    table.insert(forceIncludes, p.quoted(node.abspath))
+                end
+            end
+        })
     end)
 
     if #forceIncludes > 0 then
@@ -106,30 +126,19 @@ function m.forceIncludes(prj, cfg)
     end
 end
 
-function m.cppStandard(prj, cfg)
+function cCppProperties.cppStandard(prj, cfg)
     if (cfg.cppdialect and cfg.cppdialect:len() > 0) or cfg.cppdialect == "Default" then
-        p.w('"cppStandard": "%s",', m.cppStandards[cfg.cppdialect])
+        p.w('"cppStandard": "%s",', cCppProperties.cppStandards[cfg.cppdialect])
     end
 end
 
-function m.compilerPath(prj, cfg)
+function cCppProperties.compilerPath(prj, cfg)
     local toolset = vscode.getToolsetName(cfg)
-    local toolsetPath = m.toolsetPaths[cfg.system][toolset]
+    local toolsetPath = cCppProperties.toolsetPaths[cfg.system][toolset]
     p.w('"compilerPath": "%s",', toolsetPath)
 end
 
-m.configProps = function(prj, cfg)
-    return {
-        m.intelliSenseMode,
-        m.includeDirs,
-        m.defines,
-        m.forceIncludes,
-        m.cppStandard,
-        m.compilerPath
-    }
-end
-
-function m.generateLanguageProperties(prj)
+function cCppProperties.generate(prj)
     p.push('{')
     p.push('"configurations": [')
 
@@ -139,7 +148,7 @@ function m.generateLanguageProperties(prj)
         p.push('{')
         p.w('"name": "%s",', configName)
 
-        p.callArray(m.configProps, prj, cfg)
+        p.callArray(cCppProperties.configProps, prj, cfg)
 
         p.pop('},')
     end
