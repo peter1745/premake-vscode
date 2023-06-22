@@ -165,7 +165,8 @@ function tasks.buildSolutionTask(wks)
         p.w('"label": "Build All (%s)",', cfg.name)
         p.w('"command": "%s",', msBuildPath)
         p.w('"args": ["%s", "-p:Configuration=%s"],', solutionFile, cfg.name)
-        p.w('"problemMatcher": "$msCompile"')
+        p.w('"problemMatcher": "$msCompile",')
+        p.w('"group": "build"')
         p.pop('},') 
     end
 end
@@ -177,7 +178,8 @@ function tasks.buildMakefileTask(wks)
         p.w('"label": "Build All (%s)",', cfg.name)
         p.w('"command": "make",')
         p.w('"args": ["-j$((`nproc` - 1))", "config=%s"],', cfg.name)
-        p.w('"problemMatcher": "$gcc"')
+        p.w('"problemMatcher": "$gcc",')
+        p.w('"group": "build"')
         p.pop('},')
     end
 end
