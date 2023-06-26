@@ -15,7 +15,7 @@ newaction {
 
     -- Capabilities
     valid_kinds = { "ConsoleApp", "WindowedApp", "Makefile", "SharedLib", "StaticLib", "Utility" },
-    valid_languages = { "C", "C++" },
+    valid_languages = { "C", "C++", "C#" },
     valid_tools = { "gcc", "clang", "msc" },
 
     onStart = function()

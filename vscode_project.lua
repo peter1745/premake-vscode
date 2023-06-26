@@ -76,15 +76,15 @@ function cCppProperties.includeDirs(prj, cfg)
         -- NOTE(Peter): VS Code currently doesn't have a property for external include dirs or system include dirs
 
         for _, includedir in ipairs(cfg.sysincludedirs) do
-            p.w('"%s",', includedir)
+            p.w('"%s",', includedir:gsub([[\]], "/"))
         end
 
         for _, includedir in ipairs(cfg.externalincludedirs) do
-            p.w('"%s",', includedir)
+            p.w('"%s",', includedir:gsub([[\]], "/"))
         end
 
         for _, includedir in ipairs(cfg.includedirs) do
-            p.w('"%s",', includedir)
+            p.w('"%s",', includedir:gsub([[\]], "/"))
         end
 
         p.pop('],')

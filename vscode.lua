@@ -18,21 +18,21 @@ function vscode.generateProject(prj)
 
     if (project.isc(prj) or project.iscpp(prj)) then
         p.generate(prj, prj.location .. "/.vscode/c_cpp_properties.json", vscode.project.cCppProperties.generate)
-
-        local isLaunchable = false
-
-        for cfg in project.eachconfig(prj) do
-            isLaunchable = cfg.kind == "ConsoleApp" or cfg.kind == "WindowedApp"
-
-            if isLaunchable then
-                break
-            end
-        end
-
-        if isLaunchable then
-            p.generate(prj, prj.location .. "/.vscode/launch.json", vscode.project.launch.generate)
-        end
     end
+
+	local isLaunchable = false
+
+	for cfg in project.eachconfig(prj) do
+		isLaunchable = cfg.kind == "ConsoleApp" or cfg.kind == "WindowedApp"
+
+		if isLaunchable then
+			break
+		end
+	end
+
+	if isLaunchable then
+		p.generate(prj, prj.location .. "/.vscode/launch.json", vscode.project.launch.generate)
+	end
 end
 
 function vscode.configName(config, includePlatform)
