@@ -1,3 +1,6 @@
+# This repository is archived
+This fork is currently the most well maintained: [https://github.com/MiniFalafel/premake-vscode](https://github.com/MiniFalafel/premake-vscode)
+
 # premake-vscode
 An extension for premake that adds project and workspace generation for Visual Studio Code.
 
