@@ -18,6 +18,7 @@ newaction {
     valid_languages = { "C", "C++", "C#" },
     valid_tools = { "gcc", "clang", "msc" },
 
+    -- Generate appropriate build files
     onStart = function()
         if _TARGET_OS == "windows" then
             os.execute(_PREMAKE_COMMAND .. " vs2022")

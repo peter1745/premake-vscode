@@ -1,16 +1,19 @@
+-- PROJECT GENERATION
+
+-- Aliases
 local p = premake
 local project = p.project
 local config = p.config
 local tree = p.tree
 local vscode = p.modules.vscode
 
+-- Initialize project object
 vscode.project = {}
 vscode.project.cCppProperties = {}
-vscode.project.launch = {}
-vscode.project.tasks = {}
 
+
+-- Supported C/C++ Properties
 local cCppProperties = vscode.project.cCppProperties
-local launch = vscode.project.launch
 
 cCppProperties.cppStandards = {
 	["C++98"]   = "c++98",
@@ -38,6 +41,7 @@ cCppProperties.toolsetPaths = {
     }
 }
 
+-- C/C++ Property Generation reflection
 cCppProperties.configProps = function(prj, cfg)
     return {
         cCppProperties.intelliSenseMode,
@@ -49,25 +53,34 @@ cCppProperties.configProps = function(prj, cfg)
     }
 end
 
+
+-- GENERATION METHODS --
+
+-- Intellisense
 function cCppProperties.intelliSenseMode(prj, cfg)
+    -- Supported intellisense modes
+    -- NOTE(minifalafel): Maybe this should be stored somewhere else? In case we ever need to access it anywhere else.
     local supportedModes = {
         ["msc"] = "msvc-x64",
         ["clang"] = "clang-x64",
         ["gcc"] = "gcc-x64"
     }
 
+    -- Select the mode based on the toolset (if it's supported)
     local toolset = vscode.getToolsetName(cfg)
     local mode = supportedModes[toolset]
 
     if mode == nil then
-        error("Invalid toolset '" .. toolset "'")
+        error("Unsupported toolset '" .. toolset "'")
     end
 
+    -- Finally write the option
     p.w('"intelliSenseMode": "%s",', mode)
 end
 
 function cCppProperties.includeDirs(prj, cfg)
 
+    -- TODO: Maybe these could be consolidated into a single array and then checked?
     local hasIncludeDirs = #cfg.sysincludedirs > 0 or #cfg.externalincludedirs > 0 or #cfg.includedirs > 0
 
     if hasIncludeDirs then
@@ -86,7 +99,6 @@ function cCppProperties.includeDirs(prj, cfg)
         for _, includedir in ipairs(cfg.includedirs) do
             p.w('"%s",', includedir:gsub([[\]], "/"))
         end
-
         p.pop('],')
     end
 end
@@ -140,16 +152,22 @@ function cCppProperties.compilerPath(prj, cfg)
     p.w('"compilerPath": "%s",', toolsetPath)
 end
 
+
+-- C/C++ COMBINED GENERATION
 function cCppProperties.generate(prj)
+    -- ".json" formatted opening bracket and property name
     p.push('{')
     p.push('"configurations": [')
-
+    
+    -- For each project configuration
     for cfg in project.eachconfig(prj) do
-        local configName = vscode.configName(cfg, #prj.workspace.platforms > 1)
-
         p.push('{')
+        
+        -- Set the name
+        local configName = vscode.configName(cfg, #prj.workspace.platforms > 1)
         p.w('"name": "%s",', configName)
 
+        -- Generate the C/C++ Properties
         p.callArray(cCppProperties.configProps, prj, cfg)
 
         p.pop('},')
@@ -157,76 +175,5 @@ function cCppProperties.generate(prj)
 
     p.pop('],')
     p.w('"version": 4')
-    p.pop('}')
-end
-
-launch.configProps = function(prj, cfg)
-    return {
-        launch.type,
-        launch.request,
-        launch.program,
-        launch.args,
-        launch.stopAtEntry,
-        launch.cwd,
-        launch.environment,
-        launch.console,
-    }
-end
-
-function launch.type(prj, cfg)
-    if cfg.system == "windows" then
-        p.w('"type": "cppvsdbg",')
-    else
-        p.w('"type": "cppdbg",')
-    end
-end
-
-function launch.request(prj, cfg)
-    p.w('"request": "launch",')
-end
-
-function launch.program(prj, cfg)
-    local targetdir = project.getrelative(prj, cfg.buildtarget.directory)
-    local targetname = cfg.buildtarget.name
-    p.w('"program": "%s",', path.join(targetdir, targetname))
-end
-
-function launch.args(prj, cfg)
-    p.w('"args": [],')
-end
-
-function launch.stopAtEntry(prj, cfg)
-    p.w('"stopAtEntry": false,')
-end
-
-function launch.cwd(prj, cfg)
-    p.w('"cwd": "${workspaceFolder}",')
-end
-
-function launch.environment(prj, cfg)
-    p.w('"environment": [],')
-end
-
-function launch.console(prj, cfg)
-    p.w('"console": "integratedTerminal"')
-end
-
-function launch.generate(prj)
-    p.push('{')
-    p.w('"version": "0.2.0",')
-    p.push('"configurations": [')
-
-    for cfg in project.eachconfig(prj) do
-        local configName = vscode.configName(cfg, #prj.workspace.platforms > 1)
-
-        p.push('{')
-        p.w('"name": "Launch %s",', configName)
-
-        p.callArray(launch.configProps, prj, cfg)
-
-        p.pop('},')
-    end
-
-    p.pop(']')
     p.pop('}')
 end
